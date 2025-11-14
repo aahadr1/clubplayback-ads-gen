@@ -52,7 +52,7 @@ export default function DashboardLayout({
       <Sidebar />
       <div
         className={`flex-1 flex flex-col transition-all duration-300 ${
-          sidebarOpen ? 'lg:ml-80' : 'ml-0'
+          sidebarOpen ? 'lg:ml-70' : 'ml-0'
         }`}
       >
         <Header />

@@ -18,11 +18,10 @@
   }
 
   body {
-    @apply bg-gradient-to-br from-gray-50 via-white to-primary-50/30 dark:from-dark-950 dark:via-dark-900 dark:to-primary-950/30;
-    @apply text-gray-900 dark:text-gray-50;
+    @apply bg-white dark:bg-black;
+    @apply text-gray-900 dark:text-gray-100;
     @apply antialiased;
     min-height: 100vh;
-    background-attachment: fixed;
   }
 
   h1, h2, h3, h4, h5, h6 {
@@ -64,33 +63,32 @@
   }
 
   .glass {
-    @apply bg-white/80 dark:bg-dark-900/80 backdrop-blur-2xl border border-gray-200/60 dark:border-dark-700/60;
-    @apply shadow-xl shadow-gray-900/5 dark:shadow-black/20;
+    @apply bg-white/90 dark:bg-dark-900/90 backdrop-blur-sm border border-gray-200 dark:border-dark-800;
+    @apply shadow-sm;
   }
 
   .glass-strong {
-    @apply bg-white/95 dark:bg-dark-900/95 backdrop-blur-3xl border border-gray-200/80 dark:border-dark-700/80;
-    @apply shadow-2xl shadow-gray-900/10 dark:shadow-black/30;
+    @apply bg-white dark:bg-dark-900 border border-gray-200 dark:border-dark-800;
+    @apply shadow-sm;
   }
 
   .btn-primary {
     @apply relative overflow-hidden;
-    @apply bg-gradient-to-r from-primary-600 to-primary-500 hover:from-primary-700 hover:to-primary-600;
-    @apply text-white font-semibold px-6 py-2.5 rounded-xl;
-    @apply transition-all duration-300 ease-out;
-    @apply shadow-lg shadow-primary-500/25 hover:shadow-xl hover:shadow-primary-500/40;
-    @apply active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-lg;
-    @apply focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 dark:focus:ring-offset-dark-900;
+    @apply bg-white dark:bg-white hover:bg-gray-50 dark:hover:bg-gray-100;
+    @apply text-black font-medium px-6 py-2.5 rounded-lg;
+    @apply transition-all duration-200;
+    @apply border border-gray-200 dark:border-gray-800;
+    @apply active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed;
+    @apply focus:outline-none focus:ring-2 focus:ring-white/20 focus:ring-offset-2 dark:focus:ring-offset-black;
   }
 
   .btn-secondary {
-    @apply bg-white dark:bg-dark-800 hover:bg-gray-50 dark:hover:bg-dark-700;
-    @apply text-gray-900 dark:text-gray-100 font-semibold px-6 py-2.5 rounded-xl;
-    @apply border border-gray-200 dark:border-dark-700;
-    @apply transition-all duration-200 ease-out;
-    @apply shadow-sm hover:shadow-md;
+    @apply bg-transparent hover:bg-dark-900;
+    @apply text-gray-100 font-medium px-6 py-2.5 rounded-lg;
+    @apply border border-dark-800 hover:border-dark-700;
+    @apply transition-all duration-200;
     @apply active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed;
-    @apply focus:outline-none focus:ring-2 focus:ring-gray-300 focus:ring-offset-2 dark:focus:ring-offset-dark-900;
+    @apply focus:outline-none focus:ring-2 focus:ring-white/10 focus:ring-offset-2 dark:focus:ring-offset-black;
   }
 
   .btn-ghost {
@@ -117,17 +115,15 @@
   }
 
   .card {
-    @apply bg-white dark:bg-dark-900/50;
-    @apply border border-gray-200/60 dark:border-dark-800/60;
-    @apply rounded-2xl p-6;
-    @apply shadow-sm hover:shadow-xl;
-    @apply transition-all duration-300;
-    @apply backdrop-blur-sm;
+    @apply bg-white dark:bg-dark-900;
+    @apply border border-gray-200 dark:border-dark-800;
+    @apply rounded-lg p-6;
+    @apply transition-all duration-200;
   }
 
   .card-interactive {
     @apply card cursor-pointer;
-    @apply hover:scale-[1.02] hover:border-primary-200 dark:hover:border-primary-800;
+    @apply hover:border-gray-300 dark:hover:border-dark-700;
     @apply active:scale-[0.99];
   }
 
