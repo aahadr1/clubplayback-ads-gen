@@ -2,16 +2,28 @@ import { NextRequest, NextResponse } from 'next/server';
 import Replicate from 'replicate';
 import { createClient } from '@supabase/supabase-js';
 
-const replicate = new Replicate({
-  auth: process.env.REPLICATE_API_TOKEN!,
-});
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
-
 export async function POST(req: NextRequest) {
+  // Initialize clients inside the route handler
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  const replicateToken = process.env.REPLICATE_API_TOKEN;
+
+  if (!supabaseUrl || !supabaseKey) {
+    return NextResponse.json(
+      { error: 'Supabase configuration is missing' },
+      { status: 500 }
+    );
+  }
+
+  if (!replicateToken) {
+    return NextResponse.json(
+      { error: 'Replicate API token is missing' },
+      { status: 500 }
+    );
+  }
+
+  const supabase = createClient(supabaseUrl, supabaseKey);
+  const replicate = new Replicate({ auth: replicateToken });
   try {
     const body = await req.json();
     const { prompt, image_input, aspect_ratio, output_format, user_id } = body;
