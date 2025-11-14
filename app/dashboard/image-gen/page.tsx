@@ -50,7 +50,6 @@ export default function ImageGenPage() {
     loadUser();
   }, [supabase.auth]);
 
-
   const handleGenerate = async () => {
     if (!prompt.trim()) {
       setResult({
@@ -124,30 +123,27 @@ export default function ImageGenPage() {
   return (
     <div className="min-h-screen p-8">
       <div className="max-w-7xl mx-auto">
-        {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           className="mb-8"
         >
-          <h1 className="text-3xl font-light text-gray-900 dark:text-white mb-2">
+          <h1 className="text-3xl font-semibold text-white mb-2">
             Image Generation
           </h1>
-          <p className="text-gray-500 dark:text-gray-400">
+          <p className="text-gray-400">
             Create images with AI
           </p>
         </motion.div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* Input Section */}
           <motion.div
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             className="space-y-6"
           >
-            {/* Prompt */}
             <div className="card">
-              <label className="block text-sm font-medium text-gray-900 dark:text-white mb-3 uppercase tracking-wide">
+              <label className="block text-sm font-medium text-white mb-3 uppercase tracking-wider">
                 Prompt
               </label>
               <textarea
@@ -157,14 +153,13 @@ export default function ImageGenPage() {
                 rows={6}
                 className="input-field resize-none"
               />
-              <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
+              <p className="mt-2 text-xs text-gray-500">
                 {prompt.length} characters
               </p>
             </div>
 
-            {/* Image Inputs */}
             <div className="card">
-              <label className="block text-sm font-medium text-gray-900 dark:text-white mb-3 uppercase tracking-wide">
+              <label className="block text-sm font-medium text-white mb-3 uppercase tracking-wider">
                 Reference Images (Optional)
               </label>
               <ImageUploadZone
@@ -174,15 +169,14 @@ export default function ImageGenPage() {
               />
             </div>
 
-            {/* Settings */}
             <div className="card">
-              <label className="block text-sm font-medium text-gray-900 dark:text-white mb-4 uppercase tracking-wide">
+              <label className="block text-sm font-medium text-white mb-4 uppercase tracking-wider">
                 Settings
               </label>
               
               <div className="space-y-4">
                 <div>
-                  <label className="block text-xs text-gray-500 dark:text-gray-400 mb-2 uppercase tracking-wide">
+                  <label className="block text-xs text-gray-500 mb-2 uppercase tracking-wider font-medium">
                     Aspect Ratio
                   </label>
                   <div className="grid grid-cols-5 gap-2">
@@ -192,8 +186,8 @@ export default function ImageGenPage() {
                         onClick={() => setAspectRatio(ratio.value)}
                         className={`py-2 px-3 rounded-lg border transition-all text-sm font-medium ${
                           aspectRatio === ratio.value
-                            ? 'border-gray-900 dark:border-white bg-gray-50 dark:bg-dark-800'
-                            : 'border-gray-200 dark:border-dark-800 hover:border-gray-300 dark:hover:border-dark-700'
+                            ? 'border-primary-600 bg-primary-600/10 text-primary-400'
+                            : 'border-dark-800 hover:border-primary-900/50 text-gray-400'
                         }`}
                       >
                         {ratio.label}
@@ -203,7 +197,7 @@ export default function ImageGenPage() {
                 </div>
 
                 <div>
-                  <label className="block text-xs text-gray-500 dark:text-gray-400 mb-2 uppercase tracking-wide">
+                  <label className="block text-xs text-gray-500 mb-2 uppercase tracking-wider font-medium">
                     Output Format
                   </label>
                   <div className="grid grid-cols-3 gap-2">
@@ -213,8 +207,8 @@ export default function ImageGenPage() {
                         onClick={() => setOutputFormat(format.value)}
                         className={`py-2 px-3 rounded-lg border transition-all text-sm font-medium ${
                           outputFormat === format.value
-                            ? 'border-gray-900 dark:border-white bg-gray-50 dark:bg-dark-800'
-                            : 'border-gray-200 dark:border-dark-800 hover:border-gray-300 dark:hover:border-dark-700'
+                            ? 'border-primary-600 bg-primary-600/10 text-primary-400'
+                            : 'border-dark-800 hover:border-primary-900/50 text-gray-400'
                         }`}
                       >
                         {format.label}
@@ -225,7 +219,6 @@ export default function ImageGenPage() {
               </div>
             </div>
 
-            {/* Generate Button */}
             <button
               onClick={handleGenerate}
               disabled={loading || !prompt.trim()}
@@ -245,7 +238,6 @@ export default function ImageGenPage() {
             </button>
           </motion.div>
 
-          {/* Output Section */}
           <motion.div
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
@@ -253,7 +245,7 @@ export default function ImageGenPage() {
           >
             <div className="card min-h-[600px] flex flex-col">
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-sm font-medium text-gray-900 dark:text-white uppercase tracking-wide">
+                <h2 className="text-sm font-medium text-white uppercase tracking-wider">
                   Result
                 </h2>
                 {result?.status === 'success' && (
@@ -276,8 +268,8 @@ export default function ImageGenPage() {
                     exit={{ opacity: 0 }}
                     className="flex-1 flex flex-col items-center justify-center"
                   >
-                    <Loader2 className="w-12 h-12 text-gray-400 animate-spin mb-4" />
-                    <p className="text-gray-500 dark:text-gray-400">
+                    <Loader2 className="w-12 h-12 text-primary-400 animate-spin mb-4" />
+                    <p className="text-gray-400">
                       Creating your image...
                     </p>
                   </motion.div>
@@ -289,7 +281,7 @@ export default function ImageGenPage() {
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
-                    className="flex-1 flex flex-col items-center justify-center text-gray-400"
+                    className="flex-1 flex flex-col items-center justify-center text-gray-600"
                   >
                     <ImageIcon className="w-24 h-24 mb-4" strokeWidth={1} />
                     <p className="text-sm">Your generated image will appear here</p>
@@ -304,7 +296,7 @@ export default function ImageGenPage() {
                     exit={{ opacity: 0, scale: 0.95 }}
                     className="flex-1"
                   >
-                    <div className="relative w-full h-full min-h-[500px] rounded-lg overflow-hidden bg-gray-50 dark:bg-dark-800 border border-gray-200 dark:border-dark-800">
+                    <div className="relative w-full h-full min-h-[500px] rounded-lg overflow-hidden bg-dark-800 border border-dark-800">
                       <Image
                         src={result.url}
                         alt="Generated image"
@@ -312,9 +304,9 @@ export default function ImageGenPage() {
                         className="object-contain p-2"
                       />
                     </div>
-                    <div className="mt-4 p-3 rounded-lg bg-gray-50 dark:bg-dark-800 border border-gray-200 dark:border-dark-800 flex items-center gap-2">
-                      <CheckCircle2 className="w-5 h-5 text-gray-600 dark:text-gray-400" />
-                      <span className="text-sm text-gray-600 dark:text-gray-400">
+                    <div className="mt-4 p-3 rounded-lg bg-primary-600/10 border border-primary-900/50 flex items-center gap-2">
+                      <CheckCircle2 className="w-5 h-5 text-primary-400" />
+                      <span className="text-sm text-gray-300">
                         Image generated successfully
                       </span>
                     </div>
@@ -329,8 +321,8 @@ export default function ImageGenPage() {
                     exit={{ opacity: 0, scale: 0.95 }}
                     className="flex-1 flex flex-col items-center justify-center"
                   >
-                    <AlertCircle className="w-16 h-16 text-gray-400 mb-4" />
-                    <p className="text-gray-500 dark:text-gray-400 text-center">
+                    <AlertCircle className="w-16 h-16 text-red-400 mb-4" />
+                    <p className="text-gray-400 text-center">
                       {result.message || 'An error occurred'}
                     </p>
                   </motion.div>

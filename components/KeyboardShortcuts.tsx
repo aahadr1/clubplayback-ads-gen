@@ -26,10 +26,10 @@ export default function KeyboardShortcuts() {
     <>
       <button
         onClick={() => setIsOpen(true)}
-        className="fixed bottom-8 right-8 p-3 bg-white dark:bg-dark-900 border border-gray-200 dark:border-dark-800 rounded-lg shadow-sm hover:shadow-md transition-all z-40"
+        className="fixed bottom-8 right-8 p-3 bg-dark-900 border border-dark-800 rounded-lg hover:border-primary-900/50 transition-all z-40"
         aria-label="Show keyboard shortcuts"
       >
-        <Keyboard className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+        <Keyboard className="w-5 h-5 text-gray-400" />
       </button>
 
       <AnimatePresence>
@@ -40,23 +40,23 @@ export default function KeyboardShortcuts() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setIsOpen(false)}
-              className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50"
+              className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50"
             />
             <motion.div
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white dark:bg-dark-900 border border-gray-200 dark:border-dark-800 rounded-lg p-6 max-w-md w-full mx-4 z-50"
+              className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-dark-900 border border-dark-800 rounded-lg p-6 max-w-md w-full mx-4 z-50"
             >
               <div className="flex items-center justify-between mb-6">
-                <h2 className="text-2xl font-light text-gray-900 dark:text-white">
+                <h2 className="text-2xl font-semibold text-white">
                   Keyboard Shortcuts
                 </h2>
                 <button
                   onClick={() => setIsOpen(false)}
-                  className="p-2 hover:bg-gray-100 dark:hover:bg-dark-800 rounded-lg transition-colors"
+                  className="p-2 hover:bg-dark-800 rounded-lg transition-colors"
                 >
-                  <X className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+                  <X className="w-5 h-5 text-gray-400" />
                 </button>
               </div>
 
@@ -64,20 +64,20 @@ export default function KeyboardShortcuts() {
                 {shortcuts.map((shortcut, index) => (
                   <div
                     key={index}
-                    className="flex items-center justify-between p-3 rounded-lg bg-gray-50 dark:bg-dark-800"
+                    className="flex items-center justify-between p-3 rounded-lg bg-dark-800 border border-dark-700"
                   >
-                    <span className="text-gray-600 dark:text-gray-400">
+                    <span className="text-gray-300">
                       {shortcut.description}
                     </span>
-                    <kbd className="px-3 py-1.5 rounded-md bg-white dark:bg-dark-900 border border-gray-200 dark:border-dark-800 text-sm font-mono text-gray-900 dark:text-white">
+                    <kbd className="px-3 py-1.5 rounded-md bg-dark-900 border border-dark-800 text-sm font-mono text-white">
                       {shortcut.key}
                     </kbd>
                   </div>
                 ))}
               </div>
 
-              <p className="mt-6 text-center text-xs text-gray-500 dark:text-gray-400">
-                Press <kbd className="px-2 py-1 rounded bg-gray-100 dark:bg-dark-800 font-mono">⌘ K</kbd> to toggle
+              <p className="mt-6 text-center text-xs text-gray-500">
+                Press <kbd className="px-2 py-1 rounded bg-dark-800 font-mono text-gray-400">⌘ K</kbd> to toggle
               </p>
             </motion.div>
           </>

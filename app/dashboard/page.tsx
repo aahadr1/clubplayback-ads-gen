@@ -21,7 +21,6 @@ export default function DashboardPage() {
       if (user) {
         setUserName(user.email?.split('@')[0] || 'User');
         
-        // Load stats
         const { count: total } = await supabase
           .from('generations')
           .select('*', { count: 'exact', head: true })
@@ -52,7 +51,7 @@ export default function DashboardPage() {
       href: '/dashboard/image-gen',
     },
     {
-      title: 'View Tasks',
+      title: 'View History',
       description: 'Browse generation history',
       icon: ListChecks,
       href: '/dashboard/tasks',
@@ -74,21 +73,19 @@ export default function DashboardPage() {
 
   return (
     <div className="p-8 max-w-6xl mx-auto">
-      {/* Welcome Section */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         className="mb-12"
       >
-        <h1 className="text-4xl font-light text-gray-900 dark:text-white mb-2">
+        <h1 className="text-4xl font-semibold text-white mb-2">
           Welcome back, {userName}
         </h1>
-        <p className="text-gray-500 dark:text-gray-400">
-          AI Image Generation
+        <p className="text-gray-400">
+          AI Image Generation Platform
         </p>
       </motion.div>
 
-      {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12">
         {statCards.map((stat, index) => {
           const Icon = stat.icon;
@@ -98,19 +95,19 @@ export default function DashboardPage() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: index * 0.1 }}
-              className="card"
+              className="card hover:border-primary-900"
             >
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-500 dark:text-gray-400 mb-2 uppercase tracking-wide">
+                  <p className="text-sm text-gray-500 mb-2 uppercase tracking-wider font-medium">
                     {stat.label}
                   </p>
-                  <p className="text-4xl font-light text-gray-900 dark:text-white">
+                  <p className="text-4xl font-semibold text-white">
                     {stat.value}
                   </p>
                 </div>
-                <div className="p-3 rounded-lg bg-gray-100 dark:bg-dark-800">
-                  <Icon className="w-6 h-6 text-gray-600 dark:text-gray-400" />
+                <div className="p-4 rounded-lg bg-primary-600/10 border border-primary-900/50">
+                  <Icon className="w-7 h-7 text-primary-400" />
                 </div>
               </div>
             </motion.div>
@@ -118,9 +115,8 @@ export default function DashboardPage() {
         })}
       </div>
 
-      {/* Quick Actions */}
       <div className="mb-12">
-        <h2 className="text-2xl font-light text-gray-900 dark:text-white mb-6">
+        <h2 className="text-2xl font-semibold text-white mb-6">
           Quick Actions
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -133,18 +129,18 @@ export default function DashboardPage() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.2 + index * 0.1 }}
                 onClick={() => router.push(card.href)}
-                className="group card-interactive p-8 text-left"
+                className="group card-interactive p-8 text-left hover:border-primary-600"
               >
-                <div className="flex items-start justify-between mb-4">
-                  <div className="p-3 rounded-lg bg-gray-100 dark:bg-dark-800">
-                    <Icon className="w-6 h-6 text-gray-600 dark:text-gray-400" />
+                <div className="flex items-start justify-between mb-6">
+                  <div className="p-4 rounded-lg bg-primary-600/10 border border-primary-900/50 group-hover:bg-primary-600 group-hover:border-primary-600 transition-all">
+                    <Icon className="w-7 h-7 text-primary-400 group-hover:text-white transition-colors" />
                   </div>
-                  <ArrowRight className="w-5 h-5 text-gray-400 group-hover:translate-x-1 transition-transform" />
+                  <ArrowRight className="w-5 h-5 text-gray-600 group-hover:text-primary-400 group-hover:translate-x-1 transition-all" />
                 </div>
-                <h3 className="text-xl font-medium text-gray-900 dark:text-white mb-2">
+                <h3 className="text-xl font-semibold text-white mb-2">
                   {card.title}
                 </h3>
-                <p className="text-gray-500 dark:text-gray-400 text-sm">
+                <p className="text-gray-400 text-sm">
                   {card.description}
                 </p>
               </motion.button>
@@ -153,14 +149,13 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* Info */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.4 }}
-        className="card"
+        className="card border-primary-900/30"
       >
-        <p className="text-sm text-gray-500 dark:text-gray-400">
+        <p className="text-sm text-gray-500">
           Powered by Google's nano-banana model
         </p>
       </motion.div>

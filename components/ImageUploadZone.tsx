@@ -75,7 +75,6 @@ export default function ImageUploadZone({
 
   return (
     <div className="space-y-4">
-      {/* Upload Zone */}
       {images.length < maxImages && (
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
@@ -88,8 +87,8 @@ export default function ImageUploadZone({
           onDrop={handleDrop}
           className={`relative border-2 border-dashed rounded-lg p-8 transition-all ${
             isDragging
-              ? 'border-gray-900 dark:border-white bg-gray-50 dark:bg-dark-800'
-              : 'border-gray-200 dark:border-dark-800 hover:border-gray-300 dark:hover:border-dark-700'
+              ? 'border-primary-600 bg-primary-600/5'
+              : 'border-dark-800 hover:border-primary-900/50'
           }`}
         >
           <input
@@ -101,18 +100,17 @@ export default function ImageUploadZone({
             id="image-upload"
           />
           <div className="text-center pointer-events-none">
-            <Upload className="w-10 h-10 mx-auto mb-4 text-gray-400" />
-            <p className="text-sm font-medium text-gray-900 dark:text-white mb-1">
+            <Upload className="w-10 h-10 mx-auto mb-4 text-gray-500" />
+            <p className="text-sm font-medium text-white mb-1">
               Drop images here or click to upload
             </p>
-            <p className="text-xs text-gray-500 dark:text-gray-400">
+            <p className="text-xs text-gray-500">
               PNG, JPG, WebP up to 10MB ({maxImages - images.length} remaining)
             </p>
           </div>
         </motion.div>
       )}
 
-      {/* Image Grid */}
       <AnimatePresence>
         {images.length > 0 && (
           <motion.div
@@ -128,7 +126,7 @@ export default function ImageUploadZone({
                 animate={{ scale: 1, opacity: 1 }}
                 exit={{ scale: 0, opacity: 0 }}
                 transition={{ type: 'spring', damping: 20 }}
-                className="relative aspect-square rounded-lg overflow-hidden border border-gray-200 dark:border-dark-800 group"
+                className="relative aspect-square rounded-lg overflow-hidden border border-dark-800 group"
               >
                 <Image
                   src={img}
@@ -138,11 +136,11 @@ export default function ImageUploadZone({
                 />
                 <button
                   onClick={() => removeImage(index)}
-                  className="absolute top-2 right-2 p-1.5 bg-black/70 text-white rounded-lg opacity-0 group-hover:opacity-100 transition-opacity"
+                  className="absolute top-2 right-2 p-1.5 bg-black/80 text-white rounded-lg opacity-0 group-hover:opacity-100 transition-opacity"
                 >
                   <X className="w-4 h-4" />
                 </button>
-                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors" />
+                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors" />
               </motion.div>
             ))}
           </motion.div>

@@ -47,36 +47,36 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-white dark:bg-black p-6">
+    <div className="min-h-screen flex items-center justify-center bg-black p-6">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         className="w-full max-w-md"
       >
-        {/* Logo & Title */}
         <div className="text-center mb-12">
-          <h1 className="text-4xl font-light text-gray-900 dark:text-white mb-2">
+          <div className="inline-block p-3 rounded-xl bg-primary-600/10 border border-primary-900/50 mb-6">
+            <div className="w-10 h-10 rounded-lg bg-primary-600" />
+          </div>
+          <h1 className="text-4xl font-bold text-white mb-2">
             ClubPlayback
           </h1>
-          <p className="text-gray-500 dark:text-gray-400">
+          <p className="text-gray-400">
             AI Image Generation
           </p>
         </div>
 
-        {/* Auth Card */}
-        <div className="card">
-          <h2 className="text-2xl font-light text-gray-900 dark:text-white mb-8">
+        <div className="card border-dark-800">
+          <h2 className="text-2xl font-semibold text-white mb-8">
             {isSignUp ? 'Create Account' : 'Sign In'}
           </h2>
 
           <form onSubmit={handleAuth} className="space-y-5">
-            {/* Email */}
             <div>
-              <label className="block text-sm text-gray-500 dark:text-gray-400 mb-2 uppercase tracking-wide">
+              <label className="block text-sm text-gray-400 mb-2 uppercase tracking-wider font-medium">
                 Email
               </label>
               <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
                 <input
                   type="email"
                   value={email}
@@ -88,13 +88,12 @@ export default function LoginPage() {
               </div>
             </div>
 
-            {/* Password */}
             <div>
-              <label className="block text-sm text-gray-500 dark:text-gray-400 mb-2 uppercase tracking-wide">
+              <label className="block text-sm text-gray-400 mb-2 uppercase tracking-wider font-medium">
                 Password
               </label>
               <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
                 <input
                   type="password"
                   value={password}
@@ -107,8 +106,8 @@ export default function LoginPage() {
             </div>
 
             {error && (
-              <div className="p-3 rounded-lg bg-gray-50 dark:bg-dark-800 border border-gray-200 dark:border-dark-800">
-                <p className="text-sm text-gray-600 dark:text-gray-400">{error}</p>
+              <div className="p-3 rounded-lg bg-red-900/20 border border-red-900/50">
+                <p className="text-sm text-red-400">{error}</p>
               </div>
             )}
 
@@ -124,7 +123,7 @@ export default function LoginPage() {
           <div className="mt-6 text-center">
             <button
               onClick={() => setIsSignUp(!isSignUp)}
-              className="text-sm text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
+              className="text-sm text-gray-400 hover:text-primary-400 transition-colors"
             >
               {isSignUp
                 ? 'Already have an account? Sign in'
@@ -133,8 +132,7 @@ export default function LoginPage() {
           </div>
         </div>
 
-        {/* Footer */}
-        <p className="text-center text-sm text-gray-400 dark:text-gray-600 mt-8">
+        <p className="text-center text-sm text-gray-600 mt-8">
           Powered by Google's nano-banana model
         </p>
       </motion.div>
