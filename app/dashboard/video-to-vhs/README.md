@@ -53,10 +53,11 @@ The Video to VHS tool applies authentic VHS tape degradation effects to modern d
 ## Presets
 
 ### Clean
-Light VHS effect with minimal degradation. Good for subtle vintage look.
-- Low noise, minimal tracking errors
-- Slight color shift and scan lines
-- Ideal for: Music videos, modern content with vintage touch
+Early 2000s digital camcorder quality (480p-720p era). Very minimal degradation.
+- Almost no artifacts, just subtle color warmth
+- No scan lines, no chromatic aberration, minimal noise
+- Light vignette for vintage digital camera feel
+- Ideal for: Modern content with subtle vintage touch, Y2K aesthetic, clean retro look
 
 ### Authentic
 Balanced VHS effect that looks like a well-maintained tape from the 90s.
