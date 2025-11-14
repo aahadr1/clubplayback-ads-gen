@@ -1,7 +1,7 @@
 export interface VHSSettings {
   // Color & Quality
   chromaticAberration: number; // 0-10
-  colorShift: number; // 0-10
+  colorShift: number; // 0-10 (negative = cooler/blue, positive = warmer/magenta)
   saturation: number; // 0-200 (100 = normal)
   brightness: number; // 0-200 (100 = normal)
   contrast: number; // 0-200 (100 = normal)
@@ -20,40 +20,46 @@ export interface VHSSettings {
   vignette: number; // 0-100
   dateStamp: boolean;
   dateStampText: string;
+  
+  // Playback
+  targetFPS: number; // Target frames per second for processing
 }
 
 export const VHS_PRESETS: { [key: string]: VHSSettings } = {
   clean: {
     chromaticAberration: 0,
-    colorShift: 0.5,
-    saturation: 98,
-    brightness: 102,
-    contrast: 102,
-    noise: 1,
+    colorShift: 1,
+    saturation: 95,
+    brightness: 103,
+    contrast: 105,
+    noise: 3,
     scanLines: 0,
     trackingError: 0,
     ghosting: 0,
     sharpen: 0,
-    blur: 0,
-    vignette: 8,
+    blur: 0.3,
+    vignette: 12,
     dateStamp: false,
     dateStampText: '',
+    targetFPS: 60, // Smooth 60 FPS for clean digital look
   },
   authentic: {
-    chromaticAberration: 3,
-    colorShift: 5,
-    saturation: 85,
-    brightness: 95,
-    contrast: 110,
-    noise: 15,
-    scanLines: 30,
-    trackingError: 2,
-    ghosting: 3,
-    sharpen: 2,
-    blur: 1,
-    vignette: 30,
+    // Based on camcorder analysis: soft, slightly cold, low noise
+    chromaticAberration: 2, // 1-2 pixel shift for cheap camcorder effect
+    colorShift: -3, // Negative = cool/blue dominant (towards -10° hue shift)
+    saturation: 85, // 0.85 desaturation
+    brightness: 100, // Neutral
+    contrast: 100, // ~1.0 neutral contrast
+    noise: 8, // Low noise (alls=8 equivalent, ~0.3 intensity)
+    scanLines: 0, // No interlacing in the sample
+    trackingError: 0, // Digital camcorder, no tracking errors
+    ghosting: 0, // No ghosting in digital
+    sharpen: 0, // Quite soft image
+    blur: 1, // Soft/cheap lens effect (blur ≈ 1.0)
+    vignette: 20, // Light vignette
     dateStamp: true,
     dateStampText: 'JAN 15 1997',
+    targetFPS: 30, // Standard 30 FPS for camcorder
   },
   worn: {
     chromaticAberration: 6,
@@ -70,6 +76,7 @@ export const VHS_PRESETS: { [key: string]: VHSSettings } = {
     vignette: 45,
     dateStamp: true,
     dateStampText: 'AUG 03 1988',
+    targetFPS: 24, // Lower FPS for worn tape feel
   },
   degraded: {
     chromaticAberration: 10,
@@ -86,6 +93,7 @@ export const VHS_PRESETS: { [key: string]: VHSSettings } = {
     vignette: 60,
     dateStamp: true,
     dateStampText: 'DEC 24 1982',
+    targetFPS: 20, // Very low FPS for degraded tape
   },
 };
 
@@ -171,11 +179,20 @@ export class VHSProcessor {
       g = gray + (g - gray) * satFactor;
       b = gray + (b - gray) * satFactor;
 
-      // Color shift (VHS warmth/magenta shift)
+      // Color shift (positive = warm/magenta, negative = cool/blue)
       const shiftAmount = colorShift / 10;
-      r += shiftAmount * 8;
-      g -= shiftAmount * 2;
-      b += shiftAmount * 3;
+      if (shiftAmount >= 0) {
+        // Warm/magenta shift (VHS style)
+        r += shiftAmount * 8;
+        g -= shiftAmount * 2;
+        b += shiftAmount * 3;
+      } else {
+        // Cool/blue shift (digital camcorder style)
+        const coolShift = Math.abs(shiftAmount);
+        r -= coolShift * 5;
+        g -= coolShift * 2;
+        b += coolShift * 8;
+      }
 
       // Clamp values
       data[i] = Math.max(0, Math.min(255, r));

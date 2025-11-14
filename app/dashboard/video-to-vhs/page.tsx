@@ -75,8 +75,9 @@ export default function VideoToVHSPage() {
       // Initialize VHS processor
       const processor = new VHSProcessor(settings);
 
-      // Prepare MediaRecorder
-      const stream = canvas.captureStream(30); // 30 FPS
+      // Prepare MediaRecorder with dynamic FPS
+      const targetFPS = settings.targetFPS || 30;
+      const stream = canvas.captureStream(targetFPS);
       const mediaRecorder = new MediaRecorder(stream, {
         mimeType: 'video/webm;codecs=vp9',
         videoBitsPerSecond: 5000000, // 5 Mbps
@@ -494,6 +495,34 @@ export default function VideoToVHSPage() {
                               />
                             </div>
                           )}
+                        </div>
+
+                        {/* Playback Settings */}
+                        <div className="space-y-3 border-t border-dark-800 pt-4">
+                          <h4 className="text-xs text-gray-500 uppercase tracking-wider font-medium">
+                            Playback
+                          </h4>
+
+                          <div>
+                            <label className="text-xs text-gray-400 mb-1 block">
+                              Target FPS: {settings.targetFPS}
+                            </label>
+                            <input
+                              type="range"
+                              min="15"
+                              max="60"
+                              step="5"
+                              value={settings.targetFPS}
+                              onChange={(e) => updateSetting('targetFPS', parseInt(e.target.value))}
+                              className="w-full"
+                              disabled={processing}
+                            />
+                            <div className="flex justify-between text-xs text-gray-500 mt-1">
+                              <span>15 FPS</span>
+                              <span>30 FPS</span>
+                              <span>60 FPS</span>
+                            </div>
+                          </div>
                         </div>
                       </motion.div>
                     )}

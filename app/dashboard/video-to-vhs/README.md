@@ -14,10 +14,10 @@ The Video to VHS tool applies authentic VHS tape degradation effects to modern d
    - Creates the iconic color bleeding effect
 
 2. **Color Adjustments**
-   - **Saturation** (0-200%): Reduces color intensity for that washed-out VHS look
+   - **Saturation** (0-200%): Reduces color intensity for that washed-out look
    - **Brightness** (0-200%): Controls overall luminosity
    - **Contrast** (0-200%): Enhances or reduces contrast
-   - **Color Shift** (0-10): Adds warm/magenta tint characteristic of VHS
+   - **Color Shift** (-10 to +10): Negative = cool/blue (digital camcorder), Positive = warm/magenta (VHS)
 
 3. **Noise/Grain** (0-100)
    - Adds random pixel noise to simulate tape degradation
@@ -50,35 +50,50 @@ The Video to VHS tool applies authentic VHS tape degradation effects to modern d
    - VHS-style courier font
    - Positioned in bottom-left corner
 
+10. **Target FPS** (15-60)
+   - Adjustable frame rate per preset
+   - 60 FPS = smooth modern/digital feel
+   - 30 FPS = standard camcorder
+   - 20-24 FPS = degraded/choppy tape feel
+   - 15 FPS = extreme lo-fi
+
 ## Presets
 
-### Clean
-Early 2000s digital camcorder quality (480p-720p era). Very minimal degradation.
-- Almost no artifacts, just subtle color warmth
-- No scan lines, no chromatic aberration, minimal noise
-- Light vignette for vintage digital camera feel
-- Ideal for: Modern content with subtle vintage touch, Y2K aesthetic, clean retro look
+### Clean (60 FPS)
+Early 2000s digital camcorder quality (480p-720p era). Smooth and clean with minimal degradation.
+- 60 FPS for ultra-smooth playback
+- Minimal noise (3%), light blur (0.3px)
+- Slight color warmth, subtle vignette
+- No scan lines, no chromatic aberration
+- Ideal for: Modern content with subtle vintage touch, Y2K aesthetic, smooth clean retro look
 
-### Authentic
-Balanced VHS effect that looks like a well-maintained tape from the 90s.
-- Moderate noise and scan lines
-- Noticeable chromatic aberration
-- Medium ghosting for analog feel
-- Ideal for: 90s nostalgia, home video aesthetic
+### Authentic (30 FPS)
+Old digital camcorder / cheap phone camera quality. Soft and slightly cool-toned.
+**Based on real camcorder analysis:**
+- 30 FPS standard camcorder rate
+- Soft/cheap lens effect (blur: 1.0px)
+- Cool/blue color dominant (negative color shift)
+- Low noise (~8, not ultra-VHS)
+- Desaturated (85%)
+- 1-2 pixel chromatic aberration for cheap sensor effect
+- No interlacing, no ghosting (digital)
+- Ideal for: 90s-2000s camcorder aesthetic, home video look, found footage
 
-### Worn
-Heavily used tape with significant degradation.
-- High noise and scan lines
-- Strong chromatic aberration
-- Noticeable tracking errors
-- Ideal for: 80s aesthetic, found footage style
+### Worn (24 FPS)
+Heavily used VHS tape with significant degradation.
+- 24 FPS for cinematic/worn tape feel
+- High noise (35%) and scan lines (50%)
+- Strong chromatic aberration (6px)
+- Noticeable tracking errors and ghosting
+- Ideal for: 80s aesthetic, found footage style, analog horror
 
-### Degraded
+### Degraded (20 FPS)
 Extreme VHS degradation, like a tape played thousands of times.
-- Maximum noise and artifacts
-- Heavy tracking errors and ghosting
+- 20 FPS for very choppy playback
+- Maximum noise (60%) and artifacts (70% scan lines)
+- Heavy tracking errors (8) and ghosting (9)
 - Strong color shift and contrast
-- Ideal for: Horror aesthetic, experimental videos, retro-futuristic content
+- Ideal for: Horror aesthetic, experimental videos, retro-futuristic content, extreme lo-fi
 
 ## Technical Implementation
 
