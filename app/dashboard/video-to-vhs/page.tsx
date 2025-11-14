@@ -75,17 +75,57 @@ export default function VideoToVHSPage() {
       // Initialize VHS processor
       const processor = new VHSProcessor(settings);
 
-      // Get video properties
+      // Calculate frame extraction parameters
       const fps = settings.targetFPS || 30;
       const duration = video.duration;
-      const frameInterval = 1 / fps; // Time between frames in seconds
       const totalFrames = Math.floor(duration * fps);
+      const frameInterval = 1 / fps;
 
-      // Prepare MediaRecorder with dynamic FPS
+      console.log(`Processing ${totalFrames} frames at ${fps} FPS for ${duration.toFixed(2)}s video`);
+
+      // STEP 1: Extract and process all frames
+      const processedFrames: ImageData[] = [];
+      video.pause();
+
+      for (let frameIndex = 0; frameIndex < totalFrames; frameIndex++) {
+        // Seek to exact frame time
+        const targetTime = Math.min(frameIndex * frameInterval, duration);
+        video.currentTime = targetTime;
+
+        // Wait for seek to complete
+        await new Promise<void>((resolve) => {
+          const onSeeked = () => {
+            video.removeEventListener('seeked', onSeeked);
+            resolve();
+          };
+          video.addEventListener('seeked', onSeeked, { once: true });
+          
+          // Fallback timeout
+          setTimeout(resolve, 50);
+        });
+
+        // Draw current frame
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        
+        // Apply VHS effects
+        const processedCanvas = processor.processFrame(canvas);
+        
+        // Store processed frame as ImageData
+        const processedCtx = processedCanvas.getContext('2d')!;
+        const frameData = processedCtx.getImageData(0, 0, canvas.width, canvas.height);
+        processedFrames.push(frameData);
+
+        // Update progress (50% for extraction/processing)
+        setProgress((frameIndex / totalFrames) * 50);
+      }
+
+      console.log(`Extracted and processed ${processedFrames.length} frames`);
+
+      // STEP 2: Encode frames to video at correct FPS
       const stream = canvas.captureStream(fps);
       const mediaRecorder = new MediaRecorder(stream, {
         mimeType: 'video/webm;codecs=vp9',
-        videoBitsPerSecond: 5000000, // 5 Mbps
+        videoBitsPerSecond: 5000000,
       });
 
       const chunks: Blob[] = [];
@@ -101,58 +141,44 @@ export default function VideoToVHSPage() {
         setProcessedVideoUrl(url);
         setProcessing(false);
         setProgress(100);
+        console.log('Video encoding complete');
       };
 
       // Start recording
       mediaRecorder.start();
-      video.pause(); // Don't play in real-time
 
-      let currentFrame = 0;
+      // STEP 3: Draw frames at precise timing using requestAnimationFrame
+      let currentFrameIndex = 0;
+      const startTime = performance.now();
+      const frameDuration = 1000 / fps; // milliseconds per frame
 
-      // Process frames at our own pace (not real-time)
-      const processNextFrame = async () => {
-        if (currentFrame >= totalFrames) {
-          // Wait a bit for last frame to be captured
-          setTimeout(() => mediaRecorder.stop(), 100);
-          return;
+      const drawFrame = (timestamp: number) => {
+        const elapsed = timestamp - startTime;
+        const targetFrameIndex = Math.floor(elapsed / frameDuration);
+
+        // Draw all frames that should have been drawn by now
+        while (currentFrameIndex <= targetFrameIndex && currentFrameIndex < processedFrames.length) {
+          ctx.putImageData(processedFrames[currentFrameIndex], 0, 0);
+          currentFrameIndex++;
+
+          // Update progress (50-100% for encoding)
+          setProgress(50 + (currentFrameIndex / processedFrames.length) * 50);
         }
 
-        // Seek to exact frame time
-        const targetTime = currentFrame * frameInterval;
-        video.currentTime = Math.min(targetTime, duration);
-
-        // Wait for seek to complete
-        await new Promise<void>((resolve) => {
-          const seekHandler = () => {
-            video.removeEventListener('seeked', seekHandler);
-            resolve();
-          };
-          video.addEventListener('seeked', seekHandler);
-          
-          // Timeout in case seeked doesn't fire
+        // Continue until all frames are drawn
+        if (currentFrameIndex < processedFrames.length) {
+          requestAnimationFrame(drawFrame);
+        } else {
+          // All frames drawn, stop recording after a small delay
           setTimeout(() => {
-            video.removeEventListener('seeked', seekHandler);
-            resolve();
-          }, 100);
-        });
-
-        // Draw and process current frame
-        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-        const processedCanvas = processor.processFrame(canvas);
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        ctx.drawImage(processedCanvas, 0, 0);
-
-        // Update progress
-        const currentProgress = (currentFrame / totalFrames) * 100;
-        setProgress(currentProgress);
-
-        currentFrame++;
-
-        // Process next frame (small delay to let canvas.captureStream capture this frame)
-        setTimeout(() => processNextFrame(), 1000 / fps);
+            mediaRecorder.stop();
+          }, 200);
+        }
       };
 
-      processNextFrame();
+      // Start drawing frames
+      requestAnimationFrame(drawFrame);
+
     } catch (error) {
       console.error('Processing error:', error);
       setProcessing(false);
