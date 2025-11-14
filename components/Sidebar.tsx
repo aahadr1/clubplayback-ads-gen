@@ -2,7 +2,7 @@
 
 import { usePathname, useRouter } from 'next/navigation';
 import { useAppStore } from '@/lib/store';
-import { Home, Image, ListChecks, LogOut, X } from 'lucide-react';
+import { Home, Image, ListChecks, LogOut, X, Video } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { createSupabaseClient } from '@/lib/supabase';
 import { useKeyboardShortcut } from '@/hooks/useKeyboardShortcut';
@@ -10,6 +10,7 @@ import { useKeyboardShortcut } from '@/hooks/useKeyboardShortcut';
 const navigation = [
   { name: 'Home', href: '/dashboard', icon: Home },
   { name: 'Generate', href: '/dashboard/image-gen', icon: Image },
+  { name: 'Video to VHS', href: '/dashboard/video-to-vhs', icon: Video },
   { name: 'History', href: '/dashboard/tasks', icon: ListChecks },
 ];
 
@@ -22,6 +23,7 @@ export default function Sidebar() {
   useKeyboardShortcut({ key: 'b', metaKey: true, callback: toggleSidebar });
   useKeyboardShortcut({ key: 'h', metaKey: true, callback: () => router.push('/dashboard') });
   useKeyboardShortcut({ key: 'g', metaKey: true, callback: () => router.push('/dashboard/image-gen') });
+  useKeyboardShortcut({ key: 'v', metaKey: true, callback: () => router.push('/dashboard/video-to-vhs') });
   useKeyboardShortcut({ key: 't', metaKey: true, callback: () => router.push('/dashboard/tasks') });
 
   const handleSignOut = async () => {

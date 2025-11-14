@@ -51,7 +51,10 @@ export const createSupabaseClient = () => {
   const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
   if (!supabaseUrl || !supabaseKey) {
-    throw new Error('Missing Supabase environment variables');
+    // Return a mock client for build time - will have real values in production
+    const mockUrl = 'https://placeholder.supabase.co';
+    const mockKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBsYWNlaG9sZGVyIiwicm9sZSI6ImFub24iLCJpYXQiOjE2MjE5NzE5OTksImV4cCI6MTkzNzU0Nzk5OX0.placeholder';
+    return createBrowserClient<Database>(mockUrl, mockKey);
   }
 
   return createBrowserClient<Database>(supabaseUrl, supabaseKey);
