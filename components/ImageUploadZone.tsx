@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useState } from 'react';
-import { Upload, X } from 'lucide-react';
+import { Upload, X, Image as ImageIcon, CheckCircle2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Image from 'next/image';
 
@@ -86,10 +86,10 @@ export default function ImageUploadZone({
           }}
           onDragLeave={() => setIsDragging(false)}
           onDrop={handleDrop}
-          className={`relative border-2 border-dashed rounded-xl p-8 transition-all ${
+          className={`relative border-3 border-dashed rounded-2xl p-10 transition-all duration-300 ${
             isDragging
-              ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20'
-              : 'border-gray-300 dark:border-dark-700 hover:border-gray-400 dark:hover:border-dark-600'
+              ? 'border-primary-500 bg-gradient-to-br from-primary-50 to-primary-100 dark:from-primary-900/30 dark:to-primary-800/30 scale-[1.02]'
+              : 'border-gray-300 dark:border-dark-700 hover:border-primary-400 dark:hover:border-primary-600 bg-gray-50/50 dark:bg-dark-800/50'
           }`}
         >
           <input
@@ -101,13 +101,28 @@ export default function ImageUploadZone({
             id="image-upload"
           />
           <div className="text-center pointer-events-none">
-            <Upload className="w-12 h-12 mx-auto mb-4 text-gray-400 dark:text-gray-600" />
-            <p className="text-sm font-medium text-gray-900 dark:text-white mb-1">
-              Drop images here or click to upload
+            <motion.div
+              animate={isDragging ? { scale: 1.1, rotate: 5 } : { scale: 1, rotate: 0 }}
+              className="inline-flex p-4 rounded-2xl bg-gradient-to-br from-primary-100 to-primary-50 dark:from-primary-900/40 dark:to-primary-800/40 mb-4 border-2 border-primary-200 dark:border-primary-800"
+            >
+              {isDragging ? (
+                <ImageIcon className="w-10 h-10 text-primary-600 dark:text-primary-400" />
+              ) : (
+                <Upload className="w-10 h-10 text-primary-600 dark:text-primary-400" />
+              )}
+            </motion.div>
+            <p className="text-base font-bold text-gray-900 dark:text-white mb-2">
+              {isDragging ? 'Drop your images here' : 'Drop images here or click to upload'}
             </p>
-            <p className="text-xs text-gray-500 dark:text-gray-400">
-              PNG, JPG, WebP up to 10MB ({maxImages - images.length} remaining)
+            <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">
+              PNG, JPG, WebP up to 10MB
             </p>
+            <div className="inline-flex items-center gap-2 mt-2 px-3 py-1 rounded-full bg-white dark:bg-dark-900 border border-gray-200 dark:border-dark-700">
+              <span className="w-2 h-2 rounded-full bg-success-500"></span>
+              <span className="text-xs font-semibold text-gray-600 dark:text-gray-400">
+                {maxImages - images.length} of {maxImages} remaining
+              </span>
+            </div>
           </div>
         </motion.div>
       )}
@@ -119,7 +134,7 @@ export default function ImageUploadZone({
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: 'auto' }}
             exit={{ opacity: 0, height: 0 }}
-            className="grid grid-cols-3 gap-3"
+            className="grid grid-cols-3 gap-4"
           >
             {images.map((img, index) => (
               <motion.div
@@ -127,22 +142,45 @@ export default function ImageUploadZone({
                 initial={{ scale: 0, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
                 exit={{ scale: 0, opacity: 0 }}
-                transition={{ type: 'spring', damping: 20 }}
-                className="relative aspect-square rounded-lg overflow-hidden border-2 border-gray-200 dark:border-dark-700 group"
+                transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+                className="relative aspect-square rounded-2xl overflow-hidden border-2 border-gray-200 dark:border-dark-700 group hover:border-primary-300 dark:hover:border-primary-700 transition-all shadow-sm hover:shadow-lg"
               >
                 <Image
                   src={img}
                   alt={`Upload ${index + 1}`}
                   fill
-                  className="object-cover"
+                  className="object-cover transition-transform duration-300 group-hover:scale-110"
                 />
-                <button
+                
+                {/* Success Badge */}
+                <div className="absolute top-3 left-3 z-10 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-success-500 shadow-lg">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-white" />
+                    <span className="text-xs font-semibold text-white">Ready</span>
+                  </div>
+                </div>
+
+                {/* Remove Button */}
+                <motion.button
                   onClick={() => removeImage(index)}
-                  className="absolute top-2 right-2 p-1.5 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600 shadow-lg"
+                  whileHover={{ scale: 1.1 }}
+                  whileTap={{ scale: 0.9 }}
+                  className="absolute top-3 right-3 z-10 p-2 bg-red-500 text-white rounded-xl opacity-0 group-hover:opacity-100 transition-all hover:bg-red-600 shadow-lg shadow-red-500/50"
                 >
                   <X className="w-4 h-4" />
-                </button>
-                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors" />
+                </motion.button>
+
+                {/* Overlay */}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                
+                {/* Image Number */}
+                <div className="absolute bottom-3 left-3 z-10">
+                  <div className="px-2.5 py-1 rounded-lg bg-white/90 dark:bg-dark-900/90 backdrop-blur-sm border border-gray-200 dark:border-dark-700 shadow-sm">
+                    <span className="text-xs font-bold text-gray-900 dark:text-white">
+                      #{index + 1}
+                    </span>
+                  </div>
+                </div>
               </motion.div>
             ))}
           </motion.div>
