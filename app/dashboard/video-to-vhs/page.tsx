@@ -75,9 +75,14 @@ export default function VideoToVHSPage() {
       // Initialize VHS processor
       const processor = new VHSProcessor(settings);
 
+      // Get video properties
+      const fps = settings.targetFPS || 30;
+      const duration = video.duration;
+      const frameInterval = 1 / fps; // Time between frames in seconds
+      const totalFrames = Math.floor(duration * fps);
+
       // Prepare MediaRecorder with dynamic FPS
-      const targetFPS = settings.targetFPS || 30;
-      const stream = canvas.captureStream(targetFPS);
+      const stream = canvas.captureStream(fps);
       const mediaRecorder = new MediaRecorder(stream, {
         mimeType: 'video/webm;codecs=vp9',
         videoBitsPerSecond: 5000000, // 5 Mbps
@@ -100,32 +105,54 @@ export default function VideoToVHSPage() {
 
       // Start recording
       mediaRecorder.start();
-      video.currentTime = 0;
-      video.play();
+      video.pause(); // Don't play in real-time
 
-      // Process frames
-      const processFrame = () => {
-        if (video.paused || video.ended) {
-          mediaRecorder.stop();
+      let currentFrame = 0;
+
+      // Process frames at our own pace (not real-time)
+      const processNextFrame = async () => {
+        if (currentFrame >= totalFrames) {
+          // Wait a bit for last frame to be captured
+          setTimeout(() => mediaRecorder.stop(), 100);
           return;
         }
 
-        // Draw current frame
+        // Seek to exact frame time
+        const targetTime = currentFrame * frameInterval;
+        video.currentTime = Math.min(targetTime, duration);
+
+        // Wait for seek to complete
+        await new Promise<void>((resolve) => {
+          const seekHandler = () => {
+            video.removeEventListener('seeked', seekHandler);
+            resolve();
+          };
+          video.addEventListener('seeked', seekHandler);
+          
+          // Timeout in case seeked doesn't fire
+          setTimeout(() => {
+            video.removeEventListener('seeked', seekHandler);
+            resolve();
+          }, 100);
+        });
+
+        // Draw and process current frame
         ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-        
-        // Apply VHS effects
         const processedCanvas = processor.processFrame(canvas);
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         ctx.drawImage(processedCanvas, 0, 0);
 
         // Update progress
-        const currentProgress = (video.currentTime / video.duration) * 100;
+        const currentProgress = (currentFrame / totalFrames) * 100;
         setProgress(currentProgress);
 
-        requestAnimationFrame(processFrame);
+        currentFrame++;
+
+        // Process next frame (small delay to let canvas.captureStream capture this frame)
+        setTimeout(() => processNextFrame(), 1000 / fps);
       };
 
-      processFrame();
+      processNextFrame();
     } catch (error) {
       console.error('Processing error:', error);
       setProcessing(false);
