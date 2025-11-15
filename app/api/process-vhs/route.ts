@@ -5,8 +5,12 @@ import { existsSync } from 'fs';
 import path from 'path';
 import { VHSSettings } from '@/lib/vhsProcessor';
 
-// Increase timeout for video processing
-export const maxDuration = 300; // 5 minutes max
+// Increase timeout for video processing (Vercel Pro/Enterprise)
+export const maxDuration = 60; // 60 seconds for Hobby tier, increase on Pro
+
+// Note: Body size limit is handled by Next.js config
+// Vercel Hobby tier has 4.5MB request limit
+// We enforce 50MB client-side but actual limit depends on Vercel plan
 
 export async function POST(req: NextRequest) {
   const tempDir = path.join(process.cwd(), 'tmp');
@@ -19,13 +23,22 @@ export async function POST(req: NextRequest) {
       await mkdir(tempDir, { recursive: true });
     }
 
-    // Parse form data
+    // Parse form data with size check
     const formData = await req.formData();
     const videoFile = formData.get('video') as File;
     const settingsJson = formData.get('settings') as string;
 
     if (!videoFile) {
       return NextResponse.json({ error: 'No video file provided' }, { status: 400 });
+    }
+
+    // Check file size (50MB limit for Vercel serverless)
+    const maxSize = 50 * 1024 * 1024; // 50MB
+    if (videoFile.size > maxSize) {
+      return NextResponse.json(
+        { error: 'Video file too large. Maximum size is 50MB. Please compress or shorten your video.' },
+        { status: 413 }
+      );
     }
 
     const settings: VHSSettings = JSON.parse(settingsJson);

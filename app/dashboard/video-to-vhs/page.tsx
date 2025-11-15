@@ -62,6 +62,13 @@ export default function VideoToVHSPage() {
   const handleProcessVideo = async () => {
     if (!videoFile) return;
 
+    // Check file size before uploading
+    const maxSize = 50 * 1024 * 1024; // 50MB
+    if (videoFile.size > maxSize) {
+      setError('Video file is too large. Maximum size is 50MB. Please compress or shorten your video.');
+      return;
+    }
+
     setProcessing(true);
     setProgress(0);
     setProcessedVideoUrl(null);
@@ -84,8 +91,18 @@ export default function VideoToVHSPage() {
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Processing failed');
+        // Handle different error types
+        if (response.status === 413) {
+          throw new Error('Video file too large. Maximum size is 50MB for serverless processing.');
+        }
+        
+        const contentType = response.headers.get('content-type');
+        if (contentType && contentType.includes('application/json')) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Processing failed');
+        } else {
+          throw new Error(`Server error: ${response.status} ${response.statusText}`);
+        }
       }
 
       setProgress(90);
@@ -210,11 +227,14 @@ export default function VideoToVHSPage() {
               <VideoUploadZone
                 video={videoSrc}
                 onVideoChange={handleVideoChange}
-                maxSizeMB={100}
+                maxSizeMB={50}
               />
               <p className="mt-2 text-xs text-gray-500">
-                Max 100MB • Processed on server with native FFmpeg
+                Max 50MB for serverless processing • Native FFmpeg
               </p>
+              <div className="mt-2 p-2 bg-yellow-500/10 border border-yellow-500/30 rounded text-xs text-yellow-200/90">
+                💡 For videos over 50MB, try compressing or shortening the clip first
+              </div>
             </div>
 
             {/* Presets */}
