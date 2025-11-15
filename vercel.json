@@ -1,9 +1,0 @@
-{
-  "functions": {
-    "app/api/process-vhs/route.ts": {
-      "maxDuration": 60,
-      "memory": 1024
-    }
-  }
-}
-

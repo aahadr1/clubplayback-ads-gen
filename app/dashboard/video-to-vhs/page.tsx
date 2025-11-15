@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import VideoUploadZone from '@/components/VideoUploadZone';
 import { VHSSettings, VHS_PRESETS } from '@/lib/vhsProcessor';
+import { getFFmpegProcessor } from '@/lib/ffmpegProcessor';
 
 type PresetKey = 'clean' | 'authentic' | 'worn' | 'degraded';
 
@@ -33,6 +34,7 @@ export default function VideoToVHSPage() {
   const [progress, setProgress] = useState(0);
   const [processingMessage, setProcessingMessage] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [ffmpegLoaded, setFfmpegLoaded] = useState(false);
   
   const [settings, setSettings] = useState<VHSSettings>(VHS_PRESETS.authentic);
   
@@ -43,13 +45,37 @@ export default function VideoToVHSPage() {
   }, [currentPreset]);
 
   useEffect(() => {
+    // Load FFmpeg on mount
+    const initFFmpeg = async () => {
+      try {
+        setProcessingMessage('Initializing...');
+        const processor = await getFFmpegProcessor();
+        await processor.initialize(
+          (progress) => {
+            setProgress(progress);
+          },
+          (message) => {
+            setProcessingMessage(message);
+          }
+        );
+        setFfmpegLoaded(true);
+        setProcessingMessage('');
+        setProgress(0);
+      } catch (error) {
+        console.error('Failed to load FFmpeg:', error);
+        setError('Failed to load video processor. Please refresh the page.');
+      }
+    };
+
+    initFFmpeg();
+
     // Cleanup on unmount
     return () => {
       if (processedVideoUrl) {
         URL.revokeObjectURL(processedVideoUrl);
       }
     };
-  }, [processedVideoUrl]);
+  }, []);
 
   const handleVideoChange = (video: string | null, file: File | null) => {
     setVideoSrc(video);
@@ -60,61 +86,30 @@ export default function VideoToVHSPage() {
   };
 
   const handleProcessVideo = async () => {
-    if (!videoFile) return;
-
-    // Check file size before uploading
-    const maxSize = 50 * 1024 * 1024; // 50MB
-    if (videoFile.size > maxSize) {
-      setError('Video file is too large. Maximum size is 50MB. Please compress or shorten your video.');
-      return;
-    }
+    if (!videoFile || !ffmpegLoaded) return;
 
     setProcessing(true);
     setProgress(0);
     setProcessedVideoUrl(null);
     setError(null);
-    setProcessingMessage('Uploading video to server...');
 
     try {
-      // Prepare form data
-      const formData = new FormData();
-      formData.append('video', videoFile);
-      formData.append('settings', JSON.stringify(settings));
-
-      setProcessingMessage('Processing video with native FFmpeg...');
-      setProgress(10);
-
-      // Send to API
-      const response = await fetch('/api/process-vhs', {
-        method: 'POST',
-        body: formData,
-      });
-
-      if (!response.ok) {
-        // Handle different error types
-        if (response.status === 413) {
-          throw new Error('Video file too large. Maximum size is 50MB for serverless processing.');
+      const processor = await getFFmpegProcessor();
+      
+      const blob = await processor.processVideo(
+        videoFile,
+        settings,
+        (progress, message) => {
+          setProgress(progress);
+          setProcessingMessage(message);
         }
-        
-        const contentType = response.headers.get('content-type');
-        if (contentType && contentType.includes('application/json')) {
-          const errorData = await response.json();
-          throw new Error(errorData.error || 'Processing failed');
-        } else {
-          throw new Error(`Server error: ${response.status} ${response.statusText}`);
-        }
-      }
-
-      setProgress(90);
-      setProcessingMessage('Finalizing...');
-
-      // Get processed video blob
-      const blob = await response.blob();
+      );
+      
+      // Create URL for processed video
       const url = URL.createObjectURL(blob);
       setProcessedVideoUrl(url);
-      
+      setProcessingMessage('Processing complete!');
       setProgress(100);
-      setProcessingMessage('Complete!');
     } catch (error: any) {
       console.error('Processing error:', error);
       setError(error.message || 'An error occurred while processing the video');
@@ -178,11 +173,11 @@ export default function VideoToVHSPage() {
                 Video to VHS
                 <span className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-primary-600/20 text-primary-400 text-xs font-medium">
                   <Zap className="w-3 h-3" />
-                  Native FFmpeg
+                  FFmpeg.wasm
                 </span>
               </h1>
               <p className="text-gray-400">
-                Professional server-side video processing • 10-20x faster than browser processing
+                Apply authentic VHS degradation effects • Browser-based processing
               </p>
             </div>
             {videoSrc && (
@@ -196,6 +191,35 @@ export default function VideoToVHSPage() {
             )}
           </div>
         </motion.div>
+
+        {/* Loading FFmpeg Message */}
+        {!ffmpegLoaded && !error && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="mb-6 p-4 bg-primary-600/10 border border-primary-600/50 rounded-lg"
+          >
+            <div className="flex items-start gap-3">
+              <Loader2 className="w-5 h-5 text-primary-400 animate-spin mt-0.5" />
+              <div className="flex-1">
+                <p className="text-sm font-medium text-gray-200 mb-1">
+                  {processingMessage || 'Initializing video processor...'}
+                </p>
+                <p className="text-xs text-gray-400">
+                  First load: ~31MB download (cached by browser for future use)
+                </p>
+                {progress > 0 && (
+                  <div className="mt-2 w-full bg-dark-800 rounded-full h-1.5">
+                    <div
+                      className="bg-primary-600 h-1.5 rounded-full transition-all"
+                      style={{ width: `${progress}%` }}
+                    />
+                  </div>
+                )}
+              </div>
+            </div>
+          </motion.div>
+        )}
 
         {/* Error Alert */}
         {error && (
@@ -227,18 +251,15 @@ export default function VideoToVHSPage() {
               <VideoUploadZone
                 video={videoSrc}
                 onVideoChange={handleVideoChange}
-                maxSizeMB={50}
+                maxSizeMB={500}
               />
               <p className="mt-2 text-xs text-gray-500">
-                Max 50MB for serverless processing • Native FFmpeg
+                Browser-based processing • No server upload needed
               </p>
-              <div className="mt-2 p-2 bg-yellow-500/10 border border-yellow-500/30 rounded text-xs text-yellow-200/90">
-                💡 For videos over 50MB, try compressing or shortening the clip first
-              </div>
             </div>
 
             {/* Presets */}
-            {videoSrc && (
+            {videoSrc && ffmpegLoaded && (
               <>
                 <div className="card">
                   <label className="block text-sm font-medium text-white mb-4 uppercase tracking-wider flex items-center gap-2">
@@ -496,7 +517,7 @@ export default function VideoToVHSPage() {
                 {/* Process Button */}
                 <button
                   onClick={handleProcessVideo}
-                  disabled={processing || !videoSrc}
+                  disabled={processing || !videoSrc || !ffmpegLoaded}
                   className="w-full btn-primary py-4 flex items-center justify-center gap-2"
                 >
                   {processing ? (
@@ -569,7 +590,7 @@ export default function VideoToVHSPage() {
                     <VideoIcon className="w-24 h-24 mb-4" strokeWidth={1} />
                     <p className="text-sm">Upload a video to get started</p>
                     <p className="text-xs text-gray-500 mt-2">
-                      Powered by native FFmpeg on the server
+                      Processing happens in your browser
                     </p>
                   </motion.div>
                 )}
@@ -598,7 +619,7 @@ export default function VideoToVHSPage() {
                       {Math.round(progress)}%
                     </p>
                     <p className="text-xs text-gray-600 mt-2">
-                      10-20x faster than browser processing
+                      This may take a while depending on video length
                     </p>
                   </motion.div>
                 )}
