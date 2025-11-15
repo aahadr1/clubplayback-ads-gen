@@ -14,9 +14,11 @@ import {
   RotateCcw,
   Settings,
   Sparkles,
+  AlertCircle,
 } from 'lucide-react';
 import VideoUploadZone from '@/components/VideoUploadZone';
-import { VHSProcessor, VHSSettings, VHS_PRESETS } from '@/lib/vhsProcessor';
+import { VHSSettings, VHS_PRESETS } from '@/lib/vhsProcessor';
+import { VideoProcessor, AdvancedVideoProcessor } from '@/lib/videoProcessor';
 
 type PresetKey = 'clean' | 'authentic' | 'worn' | 'degraded';
 
@@ -29,160 +31,106 @@ export default function VideoToVHSPage() {
   const [currentPreset, setCurrentPreset] = useState<PresetKey>('authentic');
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [progress, setProgress] = useState(0);
+  const [processingMessage, setProcessingMessage] = useState('');
+  const [error, setError] = useState<string | null>(null);
   
   const [settings, setSettings] = useState<VHSSettings>(VHS_PRESETS.authentic);
   
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
   const processedVideoRef = useRef<HTMLVideoElement>(null);
+  const processorRef = useRef<VideoProcessor | null>(null);
 
   useEffect(() => {
     setSettings(VHS_PRESETS[currentPreset]);
   }, [currentPreset]);
+
+  useEffect(() => {
+    // Cleanup on unmount
+    return () => {
+      if (processorRef.current) {
+        processorRef.current.cleanup();
+      }
+      if (processedVideoUrl) {
+        URL.revokeObjectURL(processedVideoUrl);
+      }
+    };
+  }, [processedVideoUrl]);
 
   const handleVideoChange = (video: string | null, file: File | null) => {
     setVideoSrc(video);
     setVideoFile(file);
     setProcessedVideoUrl(null);
     setProgress(0);
+    setError(null);
+    
+    // Cleanup previous processor
+    if (processorRef.current) {
+      processorRef.current.cleanup();
+      processorRef.current = null;
+    }
   };
 
   const handleProcessVideo = async () => {
-    if (!videoRef.current || !canvasRef.current || !videoFile) return;
+    if (!videoSrc || !videoFile) return;
 
     setProcessing(true);
     setProgress(0);
     setProcessedVideoUrl(null);
+    setError(null);
+    setProcessingMessage('Initializing video processor...');
 
     try {
-      const video = videoRef.current;
-      const canvas = canvasRef.current;
-      const ctx = canvas.getContext('2d')!;
-
-      // Wait for video metadata
-      await new Promise((resolve) => {
-        if (video.readyState >= 2) {
-          resolve(null);
-        } else {
-          video.addEventListener('loadedmetadata', () => resolve(null), { once: true });
-        }
-      });
-
-      // Set canvas dimensions to match video
-      canvas.width = video.videoWidth;
-      canvas.height = video.videoHeight;
-
-      // Initialize VHS processor
-      const processor = new VHSProcessor(settings);
-
-      // Calculate frame extraction parameters
-      const fps = settings.targetFPS || 30;
-      const duration = video.duration;
-      const totalFrames = Math.floor(duration * fps);
-      const frameInterval = 1 / fps;
-
-      console.log(`Processing ${totalFrames} frames at ${fps} FPS for ${duration.toFixed(2)}s video`);
-
-      // STEP 1: Extract and process all frames
-      const processedFrames: ImageData[] = [];
-      video.pause();
-
-      for (let frameIndex = 0; frameIndex < totalFrames; frameIndex++) {
-        // Seek to exact frame time
-        const targetTime = Math.min(frameIndex * frameInterval, duration);
-        video.currentTime = targetTime;
-
-        // Wait for seek to complete
-        await new Promise<void>((resolve) => {
-          const onSeeked = () => {
-            video.removeEventListener('seeked', onSeeked);
-            resolve();
-          };
-          video.addEventListener('seeked', onSeeked, { once: true });
-          
-          // Fallback timeout
-          setTimeout(resolve, 50);
-        });
-
-        // Draw current frame
-        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      // Use advanced processor for better frame accuracy
+      const useAdvanced = true; // Can make this a setting later
+      
+      if (useAdvanced) {
+        const advProcessor = new AdvancedVideoProcessor(settings);
         
-        // Apply VHS effects
-        const processedCanvas = processor.processFrame(canvas);
+        // Step 1: Extract frames
+        setProcessingMessage('Extracting frames...');
+        const { frames, width, height, duration } = await advProcessor.extractFrames(
+          videoSrc,
+          (p) => setProgress(p * 100)
+        );
         
-        // Store processed frame as ImageData
-        const processedCtx = processedCanvas.getContext('2d')!;
-        const frameData = processedCtx.getImageData(0, 0, canvas.width, canvas.height);
-        processedFrames.push(frameData);
-
-        // Update progress (50% for extraction/processing)
-        setProgress((frameIndex / totalFrames) * 50);
-      }
-
-      console.log(`Extracted and processed ${processedFrames.length} frames`);
-
-      // STEP 2: Encode frames to video at correct FPS
-      const stream = canvas.captureStream(fps);
-      const mediaRecorder = new MediaRecorder(stream, {
-        mimeType: 'video/webm;codecs=vp9',
-        videoBitsPerSecond: 5000000,
-      });
-
-      const chunks: Blob[] = [];
-      mediaRecorder.ondataavailable = (e) => {
-        if (e.data.size > 0) {
-          chunks.push(e.data);
-        }
-      };
-
-      mediaRecorder.onstop = () => {
-        const blob = new Blob(chunks, { type: 'video/webm' });
+        console.log(`Extracted ${frames.length} frames, ${duration}s duration`);
+        
+        // Step 2: Process frames and create video
+        setProcessingMessage('Processing frames with VHS effects...');
+        const blob = await advProcessor.processFrames(
+          frames,
+          width,
+          height,
+          duration,
+          (p) => setProgress(p * 100)
+        );
+        
+        // Create URL for processed video
         const url = URL.createObjectURL(blob);
         setProcessedVideoUrl(url);
-        setProcessing(false);
-        setProgress(100);
-        console.log('Video encoding complete');
-      };
-
-      // Start recording
-      mediaRecorder.start();
-
-      // STEP 3: Draw frames at precise timing using requestAnimationFrame
-      let currentFrameIndex = 0;
-      const startTime = performance.now();
-      const frameDuration = 1000 / fps; // milliseconds per frame
-
-      const drawFrame = (timestamp: number) => {
-        const elapsed = timestamp - startTime;
-        const targetFrameIndex = Math.floor(elapsed / frameDuration);
-
-        // Draw all frames that should have been drawn by now
-        while (currentFrameIndex <= targetFrameIndex && currentFrameIndex < processedFrames.length) {
-          ctx.putImageData(processedFrames[currentFrameIndex], 0, 0);
-          currentFrameIndex++;
-
-          // Update progress (50-100% for encoding)
-          setProgress(50 + (currentFrameIndex / processedFrames.length) * 50);
-        }
-
-        // Continue until all frames are drawn
-        if (currentFrameIndex < processedFrames.length) {
-          requestAnimationFrame(drawFrame);
-        } else {
-          // All frames drawn, stop recording after a small delay
-          setTimeout(() => {
-            mediaRecorder.stop();
-          }, 200);
-        }
-      };
-
-      // Start drawing frames
-      requestAnimationFrame(drawFrame);
-
-    } catch (error) {
+        setProcessingMessage('Processing complete!');
+      } else {
+        // Use standard processor
+        processorRef.current = new VideoProcessor(videoSrc, settings);
+        
+        setProcessingMessage('Processing video...');
+        const blob = await processorRef.current.processVideo((progress) => {
+          setProgress(progress.percentage);
+          setProcessingMessage(`Processing frame ${progress.current} of ${progress.total}...`);
+        });
+        
+        // Create URL for processed video
+        const url = URL.createObjectURL(blob);
+        setProcessedVideoUrl(url);
+        setProcessingMessage('Processing complete!');
+      }
+      
+      setProgress(100);
+    } catch (error: any) {
       console.error('Processing error:', error);
+      setError(error.message || 'An error occurred while processing the video');
+    } finally {
       setProcessing(false);
-      alert('Error processing video. Please try again.');
+      setTimeout(() => setProcessingMessage(''), 3000);
     }
   };
 
@@ -209,10 +157,20 @@ export default function VideoToVHSPage() {
   };
 
   const handleReset = () => {
+    // Cleanup
+    if (processorRef.current) {
+      processorRef.current.cleanup();
+      processorRef.current = null;
+    }
+    if (processedVideoUrl) {
+      URL.revokeObjectURL(processedVideoUrl);
+    }
+    
     setVideoSrc(null);
     setVideoFile(null);
     setProcessedVideoUrl(null);
     setProgress(0);
+    setError(null);
     setCurrentPreset('authentic');
     setSettings(VHS_PRESETS.authentic);
   };
@@ -249,6 +207,21 @@ export default function VideoToVHSPage() {
             )}
           </div>
         </motion.div>
+
+        {/* Error Alert */}
+        {error && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mb-6 p-4 bg-red-500/10 border border-red-500/50 rounded-lg flex items-start gap-3"
+          >
+            <AlertCircle className="w-5 h-5 text-red-400 mt-0.5" />
+            <div className="flex-1">
+              <h3 className="text-sm font-medium text-red-400 mb-1">Processing Error</h3>
+              <p className="text-sm text-gray-300">{error}</p>
+            </div>
+          </motion.div>
+        )}
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Left Column - Controls */}
@@ -290,6 +263,9 @@ export default function VideoToVHSPage() {
                         } disabled:opacity-50`}
                       >
                         {preset}
+                        <span className="block text-xs mt-1 opacity-75">
+                          {VHS_PRESETS[preset].targetFPS} FPS
+                        </span>
                       </button>
                     ))}
                   </div>
@@ -384,11 +360,11 @@ export default function VideoToVHSPage() {
 
                           <div>
                             <label className="text-xs text-gray-400 mb-1 block">
-                              Color Shift: {settings.colorShift}
+                              Color Shift: {settings.colorShift} ({settings.colorShift < 0 ? 'Cool' : 'Warm'})
                             </label>
                             <input
                               type="range"
-                              min="0"
+                              min="-10"
                               max="10"
                               value={settings.colorShift}
                               onChange={(e) => updateSetting('colorShift', parseInt(e.target.value))}
@@ -591,7 +567,9 @@ export default function VideoToVHSPage() {
                   {processing ? (
                     <>
                       <Loader2 className="w-5 h-5 animate-spin" />
-                      Processing... {Math.round(progress)}%
+                      <span className="flex-1">
+                        {processingMessage || `Processing... ${Math.round(progress)}%`}
+                      </span>
                     </>
                   ) : (
                     <>
@@ -668,12 +646,14 @@ export default function VideoToVHSPage() {
                   >
                     <Loader2 className="w-12 h-12 text-primary-400 animate-spin mb-4" />
                     <p className="text-gray-400 mb-2">
-                      Applying VHS effects...
+                      {processingMessage || 'Applying VHS effects...'}
                     </p>
                     <div className="w-64 bg-dark-800 rounded-full h-2 mb-2">
-                      <div
-                        className="bg-primary-600 h-2 rounded-full transition-all duration-300"
-                        style={{ width: `${progress}%` }}
+                      <motion.div
+                        className="bg-primary-600 h-2 rounded-full"
+                        initial={{ width: '0%' }}
+                        animate={{ width: `${progress}%` }}
+                        transition={{ duration: 0.3 }}
                       />
                     </div>
                     <p className="text-sm text-gray-500">
@@ -698,6 +678,7 @@ export default function VideoToVHSPage() {
                         className="w-full h-auto"
                         onPlay={() => setIsPlaying(true)}
                         onPause={() => setIsPlaying(false)}
+                        onEnded={() => setIsPlaying(false)}
                       />
                     </div>
                     <div className="mt-4 p-3 rounded-lg bg-primary-600/10 border border-primary-900/50 flex items-center gap-2">
@@ -712,14 +693,7 @@ export default function VideoToVHSPage() {
             </div>
           </motion.div>
         </div>
-
-        {/* Hidden elements for processing */}
-        <div style={{ display: 'none' }}>
-          <video ref={videoRef} src={videoSrc || ''} />
-          <canvas ref={canvasRef} />
-        </div>
       </div>
     </div>
   );
 }
-
