@@ -1,7 +1,7 @@
 export interface VHSSettings {
   // Color & Quality
   chromaticAberration: number; // 0-10
-  colorShift: number; // 0-10 (negative = cooler/blue, positive = warmer/magenta)
+  colorShift: number; // -10 to +10 (negative = cooler/blue, positive = warmer/magenta)
   saturation: number; // 0-200 (100 = normal)
   brightness: number; // 0-200 (100 = normal)
   contrast: number; // 0-200 (100 = normal)
@@ -20,9 +20,6 @@ export interface VHSSettings {
   vignette: number; // 0-100
   dateStamp: boolean;
   dateStampText: string;
-  
-  // Playback
-  targetFPS: number; // Target frames per second for processing
 }
 
 export const VHS_PRESETS: { [key: string]: VHSSettings } = {
@@ -41,7 +38,6 @@ export const VHS_PRESETS: { [key: string]: VHSSettings } = {
     vignette: 12,
     dateStamp: false,
     dateStampText: '',
-    targetFPS: 60, // Smooth 60 FPS for clean digital look
   },
   authentic: {
     // Based on camcorder analysis: soft, slightly cold, low noise
@@ -59,7 +55,6 @@ export const VHS_PRESETS: { [key: string]: VHSSettings } = {
     vignette: 20, // Light vignette
     dateStamp: true,
     dateStampText: 'JAN 15 1997',
-    targetFPS: 30, // Standard 30 FPS for camcorder
   },
   worn: {
     chromaticAberration: 6,
@@ -76,7 +71,6 @@ export const VHS_PRESETS: { [key: string]: VHSSettings } = {
     vignette: 45,
     dateStamp: true,
     dateStampText: 'AUG 03 1988',
-    targetFPS: 24, // Lower FPS for worn tape feel
   },
   degraded: {
     chromaticAberration: 10,
@@ -93,7 +87,6 @@ export const VHS_PRESETS: { [key: string]: VHSSettings } = {
     vignette: 60,
     dateStamp: true,
     dateStampText: 'DEC 24 1982',
-    targetFPS: 20, // Very low FPS for degraded tape
   },
 };
 

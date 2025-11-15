@@ -18,7 +18,7 @@ import {
 } from 'lucide-react';
 import VideoUploadZone from '@/components/VideoUploadZone';
 import { VHSSettings, VHS_PRESETS } from '@/lib/vhsProcessor';
-import { VideoProcessor, AdvancedVideoProcessor } from '@/lib/videoProcessor';
+import { getFFmpegProcessor } from '@/lib/ffmpegProcessor';
 
 type PresetKey = 'clean' | 'authentic' | 'worn' | 'degraded';
 
@@ -33,27 +33,42 @@ export default function VideoToVHSPage() {
   const [progress, setProgress] = useState(0);
   const [processingMessage, setProcessingMessage] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [ffmpegLoaded, setFfmpegLoaded] = useState(false);
   
   const [settings, setSettings] = useState<VHSSettings>(VHS_PRESETS.authentic);
   
   const processedVideoRef = useRef<HTMLVideoElement>(null);
-  const processorRef = useRef<VideoProcessor | null>(null);
 
   useEffect(() => {
     setSettings(VHS_PRESETS[currentPreset]);
   }, [currentPreset]);
 
   useEffect(() => {
+    // Load FFmpeg on mount
+    const initFFmpeg = async () => {
+      try {
+        setProcessingMessage('Loading video processor...');
+        const processor = await getFFmpegProcessor();
+        await processor.initialize((progress) => {
+          setProgress(progress);
+        });
+        setFfmpegLoaded(true);
+        setProcessingMessage('');
+      } catch (error) {
+        console.error('Failed to load FFmpeg:', error);
+        setError('Failed to load video processor. Please refresh the page.');
+      }
+    };
+
+    initFFmpeg();
+
     // Cleanup on unmount
     return () => {
-      if (processorRef.current) {
-        processorRef.current.cleanup();
-      }
       if (processedVideoUrl) {
         URL.revokeObjectURL(processedVideoUrl);
       }
     };
-  }, [processedVideoUrl]);
+  }, []);
 
   const handleVideoChange = (video: string | null, file: File | null) => {
     setVideoSrc(video);
@@ -61,69 +76,32 @@ export default function VideoToVHSPage() {
     setProcessedVideoUrl(null);
     setProgress(0);
     setError(null);
-    
-    // Cleanup previous processor
-    if (processorRef.current) {
-      processorRef.current.cleanup();
-      processorRef.current = null;
-    }
   };
 
   const handleProcessVideo = async () => {
-    if (!videoSrc || !videoFile) return;
+    if (!videoFile || !ffmpegLoaded) return;
 
     setProcessing(true);
     setProgress(0);
     setProcessedVideoUrl(null);
     setError(null);
-    setProcessingMessage('Initializing video processor...');
 
     try {
-      // Use advanced processor for better frame accuracy
-      const useAdvanced = true; // Can make this a setting later
+      const processor = await getFFmpegProcessor();
       
-      if (useAdvanced) {
-        const advProcessor = new AdvancedVideoProcessor(settings);
-        
-        // Step 1: Extract frames
-        setProcessingMessage('Extracting frames...');
-        const { frames, width, height, duration } = await advProcessor.extractFrames(
-          videoSrc,
-          (p) => setProgress(p * 100)
-        );
-        
-        console.log(`Extracted ${frames.length} frames, ${duration}s duration`);
-        
-        // Step 2: Process frames and create video
-        setProcessingMessage('Processing frames with VHS effects...');
-        const blob = await advProcessor.processFrames(
-          frames,
-          width,
-          height,
-          duration,
-          (p) => setProgress(p * 100)
-        );
-        
-        // Create URL for processed video
-        const url = URL.createObjectURL(blob);
-        setProcessedVideoUrl(url);
-        setProcessingMessage('Processing complete!');
-      } else {
-        // Use standard processor
-        processorRef.current = new VideoProcessor(videoSrc, settings);
-        
-        setProcessingMessage('Processing video...');
-        const blob = await processorRef.current.processVideo((progress) => {
-          setProgress(progress.percentage);
-          setProcessingMessage(`Processing frame ${progress.current} of ${progress.total}...`);
-        });
-        
-        // Create URL for processed video
-        const url = URL.createObjectURL(blob);
-        setProcessedVideoUrl(url);
-        setProcessingMessage('Processing complete!');
-      }
+      const blob = await processor.processVideo(
+        videoFile,
+        settings,
+        (progress, message) => {
+          setProgress(progress);
+          setProcessingMessage(message);
+        }
+      );
       
+      // Create URL for processed video
+      const url = URL.createObjectURL(blob);
+      setProcessedVideoUrl(url);
+      setProcessingMessage('Processing complete!');
       setProgress(100);
     } catch (error: any) {
       console.error('Processing error:', error);
@@ -139,7 +117,7 @@ export default function VideoToVHSPage() {
 
     const a = document.createElement('a');
     a.href = processedVideoUrl;
-    a.download = `vhs-${videoFile?.name || 'video'}.webm`;
+    a.download = `vhs-${videoFile?.name.replace(/\.[^/.]+$/, '')}.mp4`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -157,11 +135,6 @@ export default function VideoToVHSPage() {
   };
 
   const handleReset = () => {
-    // Cleanup
-    if (processorRef.current) {
-      processorRef.current.cleanup();
-      processorRef.current = null;
-    }
     if (processedVideoUrl) {
       URL.revokeObjectURL(processedVideoUrl);
     }
@@ -193,7 +166,7 @@ export default function VideoToVHSPage() {
                 Video to VHS
               </h1>
               <p className="text-gray-400">
-                Apply authentic VHS degradation effects to your videos
+                Apply authentic VHS degradation effects using FFmpeg
               </p>
             </div>
             {videoSrc && (
@@ -208,6 +181,30 @@ export default function VideoToVHSPage() {
           </div>
         </motion.div>
 
+        {/* Loading FFmpeg Message */}
+        {!ffmpegLoaded && !error && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="mb-6 p-4 bg-primary-600/10 border border-primary-600/50 rounded-lg flex items-center gap-3"
+          >
+            <Loader2 className="w-5 h-5 text-primary-400 animate-spin" />
+            <div className="flex-1">
+              <p className="text-sm text-gray-300">
+                {processingMessage || 'Initializing video processor...'}
+              </p>
+              {progress > 0 && (
+                <div className="mt-2 w-full bg-dark-800 rounded-full h-1">
+                  <div
+                    className="bg-primary-600 h-1 rounded-full transition-all"
+                    style={{ width: `${progress}%` }}
+                  />
+                </div>
+              )}
+            </div>
+          </motion.div>
+        )}
+
         {/* Error Alert */}
         {error && (
           <motion.div
@@ -217,7 +214,7 @@ export default function VideoToVHSPage() {
           >
             <AlertCircle className="w-5 h-5 text-red-400 mt-0.5" />
             <div className="flex-1">
-              <h3 className="text-sm font-medium text-red-400 mb-1">Processing Error</h3>
+              <h3 className="text-sm font-medium text-red-400 mb-1">Error</h3>
               <p className="text-sm text-gray-300">{error}</p>
             </div>
           </motion.div>
@@ -243,7 +240,7 @@ export default function VideoToVHSPage() {
             </div>
 
             {/* Presets */}
-            {videoSrc && (
+            {videoSrc && ffmpegLoaded && (
               <>
                 <div className="card">
                   <label className="block text-sm font-medium text-white mb-4 uppercase tracking-wider flex items-center gap-2">
@@ -263,9 +260,6 @@ export default function VideoToVHSPage() {
                         } disabled:opacity-50`}
                       >
                         {preset}
-                        <span className="block text-xs mt-1 opacity-75">
-                          {VHS_PRESETS[preset].targetFPS} FPS
-                        </span>
                       </button>
                     ))}
                   </div>
@@ -276,6 +270,7 @@ export default function VideoToVHSPage() {
                   <button
                     onClick={() => setShowAdvanced(!showAdvanced)}
                     className="w-full flex items-center justify-between mb-4"
+                    disabled={processing}
                   >
                     <span className="text-sm font-medium text-white uppercase tracking-wider flex items-center gap-2">
                       <Settings className="w-4 h-4" />
@@ -360,7 +355,7 @@ export default function VideoToVHSPage() {
 
                           <div>
                             <label className="text-xs text-gray-400 mb-1 block">
-                              Color Shift: {settings.colorShift} ({settings.colorShift < 0 ? 'Cool' : 'Warm'})
+                              Color Shift: {settings.colorShift} ({settings.colorShift < 0 ? 'Cool/Blue' : settings.colorShift > 0 ? 'Warm/Magenta' : 'Neutral'})
                             </label>
                             <input
                               type="range"
@@ -424,36 +419,6 @@ export default function VideoToVHSPage() {
                               disabled={processing}
                             />
                           </div>
-
-                          <div>
-                            <label className="text-xs text-gray-400 mb-1 block">
-                              Tracking Error: {settings.trackingError}
-                            </label>
-                            <input
-                              type="range"
-                              min="0"
-                              max="10"
-                              value={settings.trackingError}
-                              onChange={(e) => updateSetting('trackingError', parseInt(e.target.value))}
-                              className="w-full"
-                              disabled={processing}
-                            />
-                          </div>
-
-                          <div>
-                            <label className="text-xs text-gray-400 mb-1 block">
-                              Ghosting: {settings.ghosting}
-                            </label>
-                            <input
-                              type="range"
-                              min="0"
-                              max="10"
-                              value={settings.ghosting}
-                              onChange={(e) => updateSetting('ghosting', parseInt(e.target.value))}
-                              className="w-full"
-                              disabled={processing}
-                            />
-                          </div>
                         </div>
 
                         {/* Effects */}
@@ -502,7 +467,7 @@ export default function VideoToVHSPage() {
                               disabled={processing}
                               className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
                                 settings.dateStamp ? 'bg-primary-600' : 'bg-dark-800'
-                              }`}
+                              } disabled:opacity-50`}
                             >
                               <span
                                 className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
@@ -525,34 +490,6 @@ export default function VideoToVHSPage() {
                             </div>
                           )}
                         </div>
-
-                        {/* Playback Settings */}
-                        <div className="space-y-3 border-t border-dark-800 pt-4">
-                          <h4 className="text-xs text-gray-500 uppercase tracking-wider font-medium">
-                            Playback
-                          </h4>
-
-                          <div>
-                            <label className="text-xs text-gray-400 mb-1 block">
-                              Target FPS: {settings.targetFPS}
-                            </label>
-                            <input
-                              type="range"
-                              min="15"
-                              max="60"
-                              step="5"
-                              value={settings.targetFPS}
-                              onChange={(e) => updateSetting('targetFPS', parseInt(e.target.value))}
-                              className="w-full"
-                              disabled={processing}
-                            />
-                            <div className="flex justify-between text-xs text-gray-500 mt-1">
-                              <span>15 FPS</span>
-                              <span>30 FPS</span>
-                              <span>60 FPS</span>
-                            </div>
-                          </div>
-                        </div>
                       </motion.div>
                     )}
                   </AnimatePresence>
@@ -561,13 +498,13 @@ export default function VideoToVHSPage() {
                 {/* Process Button */}
                 <button
                   onClick={handleProcessVideo}
-                  disabled={processing || !videoSrc}
+                  disabled={processing || !videoSrc || !ffmpegLoaded}
                   className="w-full btn-primary py-4 flex items-center justify-center gap-2"
                 >
                   {processing ? (
                     <>
                       <Loader2 className="w-5 h-5 animate-spin" />
-                      <span className="flex-1">
+                      <span className="flex-1 text-left">
                         {processingMessage || `Processing... ${Math.round(progress)}%`}
                       </span>
                     </>
@@ -645,7 +582,7 @@ export default function VideoToVHSPage() {
                     className="flex-1 flex flex-col items-center justify-center"
                   >
                     <Loader2 className="w-12 h-12 text-primary-400 animate-spin mb-4" />
-                    <p className="text-gray-400 mb-2">
+                    <p className="text-gray-400 mb-2 text-center px-4">
                       {processingMessage || 'Applying VHS effects...'}
                     </p>
                     <div className="w-64 bg-dark-800 rounded-full h-2 mb-2">
